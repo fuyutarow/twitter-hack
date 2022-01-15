@@ -3,7 +3,6 @@ import * as ReactDOM from 'react-dom';
 import { useState, useEffect } from 'react';
 import { Container, Box, Button, TextField } from '@mui/material';
 import { DataGrid, GridRowsProp, GridColDef } from '@mui/x-data-grid';
-import { useMap } from 'usehooks-ts';
 
 import { name as appName, version } from '../package.json';
 
@@ -32,72 +31,44 @@ const addMemberList = () => {
 
 };
 
-interface Row {
-  id: string,
-  name: string,
-  status: 'pending' | 'done',
-}
-
-const columns: GridColDef[] = [
-  { field: 'name', headerName: 'screen name', width: 200 },
-  { field: 'status', headerName: 'status', width: 120 },
-  { field: 'url', headerName: 'url', width: 300 },
+const rows: GridRowsProp = [
+  { id: 1, col1: 'Hello', col2: 'World' },
+  { id: 2, col1: 'DataGridPro', col2: 'is Awesome' },
+  { id: 3, col1: 'MUI', col2: 'is Amazing' },
 ];
 
-const rowMap2rows = (rowMap: Omit<Map<string, Row>, 'set' | 'clear' | 'delete'>) => {
-  const rows = Array.from(rowMap.entries()).map(([key, value]) => ({
-    ...value,
-    url: `https://twitter.com/${value.name}`,
-  }));
-  return rows;
-};
+const columns: GridColDef[] = [
+  { field: 'col1', headerName: 'Column 1', width: 150 },
+  { field: 'col2', headerName: 'Column 2', width: 150 },
+];
 
 const App: React.FC = () => {
   const [input, setInput] = useState('');
   const [userNameList, setUserNameList] = useState<string[]>([]);
   const [current, setCurrent] = useState('');
   const [isFinished, setIsFinished] = useState(false);
-  const [rows, setRows] = useState<GridRowsProp>([]);
-
-  const [rowMap, { set }] = useMap<string, Row>([]);
 
   useEffect(() => {
     const names = input.split(',').map(s => s.trim().replace('@', ''));
     setUserNameList(names);
-
   }, [input]);
 
-  useEffect(() => {
-    userNameList.forEach(name => {
-      const row: Row = {
-        id: name,
-        name: name,
-        status: 'pending',
-      };
-      set(row.id, row);
-    });
-  }, [userNameList]);
-
-  useEffect(() => {
-    const rows = rowMap2rows(rowMap);
-    setRows(rows);
-  }, [rowMap]);
-
   return (
-    <Container sx={{
-      backgroundColor: 'whitesmoke',
-      p: 3,
+    <Container className="App-container" style={{
+      backgroundColor: '#ECEFF4',
+      paddingTop: 20,
+      paddingBottom: 20,
+      width: 600,
     }}>
       <Box>
         v{version}
       </Box>
-      <Box>
-        <Button
-          variant='contained'
-          onClick={async () => { chrome.runtime.openOptionsPage(); }}
-          children="open options"
-        />
-      </Box>
+      <Button
+        children="user list"
+        onClick={() => {
+          alert(userNameList);
+        }}
+      />
       <TextField
         id="text-field"
         label="カンマ区切りでtwitter idを複数入力"
@@ -111,6 +82,12 @@ const App: React.FC = () => {
       }}>
         {isFinished ? 'DONE' : current}
       </Box>
+      <Box>
+        <Button
+          onClick={() => { chrome.runtime.openOptionsPage(); }}
+          children="open options"
+        />
+      </Box>
       <Button
         children="Go"
         onClick={async () => {
@@ -119,12 +96,7 @@ const App: React.FC = () => {
             jumpUrl(`https://twitter.com/${userName}`);
             await sleep(2e3);
             addMemberList();
-            await sleep(6e3);
-            set(userName, {
-              id: userName,
-              name: userName,
-              status: 'done',
-            });
+            await sleep(4e3);
           }
           setIsFinished(true);
         }}
@@ -168,12 +140,12 @@ const App: React.FC = () => {
           });
         }}
       />
-      <div style={{ height: 800, width: '100%' }}>
+      <div style={{ height: 300, width: '100%' }}>
         <DataGrid rows={rows} columns={columns} />
       </div>
     </Container>
   );
 };
 
-const mountNode = document.getElementById('popup');
+const mountNode = document.getElementById('options');
 ReactDOM.render(<App />, mountNode);
